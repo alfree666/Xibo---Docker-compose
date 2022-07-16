@@ -1,0 +1,48 @@
+version: "3.3"
+
+services:
+
+    cms-db:
+        image: mariadb:10.7
+        volumes:
+            - ./db:/var/lib/mysql
+        env_file: .env            
+        environment:
+            - MYSQL_DATABASE=cms
+            - MYSQL_USER=cms
+            - MYSQL_PASSWORD=yes
+            - MYSQL_RANDOM_ROOT_PASSWORD='1'          
+        mem_limit: 1g
+        restart: unless-stopped
+        
+    cms-xmr:
+        image: xibosignage/xibo-xmr:0.9
+        ports:
+            - "8000:9505"
+        restart: unless-stopped
+        env_file: .env        
+        mem_limit: 256m
+
+    cms-web:
+        image: xibosignage/xibo-cms:release-3.1.4
+        volumes:
+            - "./cms/custom:/var/www/cms/custom"
+            - "./cms/backup:/var/www/backup"
+            - "./cms/web/theme/custom:/var/www/cms/web/theme/custom"
+            - "./cms/library:/var/www/cms/library"
+            - "./cms/web/userscripts:/var/www/cms/web/userscripts"
+        restart: unless-stopped
+        links:
+            - cms-db:mysql
+            - cms-xmr:50001
+        env_file: .env            
+        environment:
+            - XMR_HOST=cms-xmr
+            - XMR_DB_HOST=cms-db
+            - XMR_DB_NAME=cms
+            - XMR_DB_USER=cms
+            - XMR_DB_PASSWORD=yes
+        ports:
+            - "8200:80"
+        mem_limit: 1g
+
